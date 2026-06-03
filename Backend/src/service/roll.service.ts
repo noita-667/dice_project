@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { DiceType, RollEntry } from '../models/roll.model';
+import { DiceType, RollEntry } from '../model/roll.model';
 
 const VALID_TYPES: DiceType[] = ['d6', 'd12', 'd20'];
 

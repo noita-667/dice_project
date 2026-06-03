@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { getHistory, saveRoll, isValidType } from '../services/roll.service';
+import { getHistory, saveRoll, isValidType } from '../service/roll.service';
 
 const RollBody = z.object({
   type: z.string(),

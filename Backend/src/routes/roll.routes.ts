@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getHistory_, postRoll } from '../controllers/roll.controller';
+import { getHistory_, postRoll } from '../controller/roll.controller';
 
 const router = Router();
 
