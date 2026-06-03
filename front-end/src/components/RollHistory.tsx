@@ -1,0 +1,42 @@
+import type { RollEntry } from '../types/dice';
+
+interface Props {
+  history: RollEntry[];
+  onClear: () => void;
+}
+
+function formatTime(ts: number): string {
+  return new Date(ts).toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+export function RollHistory({ history, onClear }: Props) {
+  if (history.length === 0) {
+    return <p style={{ fontSize: 13, color: '#888', textAlign: 'center' }}>Aucun lancer</p>;
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#888' }}>
+          Historique
+        </span>
+        <button onClick={onClear} style={{ fontSize: 11, border: 'none', background: 'none', cursor: 'pointer', color: '#888' }}>
+          Effacer
+        </button>
+      </div>
+      <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {history.map((entry) => (
+          <li key={entry.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', border: '0.5px solid #eee', borderRadius: 8, fontSize: 14 }}>
+            <span style={{ fontWeight: 500 }}>{entry.label}</span>
+            <span style={{ fontWeight: 500 }}>{entry.value}</span>
+            <span style={{ color: '#aaa' }}>{formatTime(entry.timestamp)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
