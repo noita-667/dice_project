@@ -1,25 +1,43 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { DICE_LIST } from './types/dice';
-import type { DiceType } from './types/dice';
-import { useRollHistory } from './hooks/useRollHistory';
+import type { DiceType, RollEntry } from './types/dice';
 import { DicePicker } from './components/DicePicker';
 import { DiceResult } from './components/DiceResult';
 import { RollHistory } from './components/RollHistory';
 
+const API_URL = 'http://localhost:3000'; // à adapter selon le back
+
 export default function App() {
   const [selected, setSelected] = useState<DiceType | null>(null);
   const [lastRoll, setLastRoll] = useState<{ value: number; label: string } | null>(null);
-  const { history, addEntry, clearHistory } = useRollHistory();
+  const [history, setHistory] = useState<RollEntry[]>([]);
 
-  const handleRoll = useCallback(() => {
+  const fetchHistory = useCallback(async () => {
+    const res = await fetch(`${API_URL}/rolls`);
+    const data = await res.json();
+    setHistory(data);
+  }, []);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
+  const handleRoll = useCallback(async () => {
     if (!selected) return;
     const die = DICE_LIST.find((d) => d.type === selected);
     if (!die) return;
 
     const value = Math.floor(Math.random() * die.faces) + 1;
     setLastRoll({ value, label: `${die.label} · ${die.faces} faces` });
-    addEntry({ type: die.type, label: die.label, value });
-  }, [selected, addEntry]);
+
+    await fetch(`${API_URL}/rolls`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: die.type, label: die.label, value }),
+    });
+
+    fetchHistory();
+  }, [selected, fetchHistory]);
 
   return (
     <main style={{ maxWidth: 400, margin: '2rem auto', padding: '0 1rem', fontFamily: 'sans-serif' }}>
@@ -37,7 +55,7 @@ export default function App() {
         Lancer
       </button>
 
-      <RollHistory history={history} onClear={clearHistory} />
+      <RollHistory history={history} />
     </main>
   );
 }

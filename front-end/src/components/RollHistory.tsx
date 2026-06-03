@@ -2,7 +2,6 @@ import type { RollEntry } from '../types/dice';
 
 interface Props {
   history: RollEntry[];
-  onClear: () => void;
 }
 
 function formatTime(ts: number): string {
@@ -13,20 +12,15 @@ function formatTime(ts: number): string {
   });
 }
 
-export function RollHistory({ history, onClear }: Props) {
+export function RollHistory({ history }: Props) {
   if (history.length === 0) {
     return <p style={{ fontSize: 13, color: '#888', textAlign: 'center' }}>Aucun lancer</p>;
   }
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-        <span style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#888' }}>
-          Historique
-        </span>
-        <button onClick={onClear} style={{ fontSize: 11, border: 'none', background: 'none', cursor: 'pointer', color: '#888' }}>
-          Effacer
-        </button>
+      <div style={{ marginBottom: 8, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#888' }}>
+        Historique
       </div>
       <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
         {history.map((entry) => (
