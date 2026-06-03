@@ -1,5 +1,9 @@
-/** Types de dés disponibles dans l'application */
-export type DiceType = 'd6' | 'd12' | 'd20';
+/**
+ * Identifiant d'un dé.
+ * Les dés de base utilisent 'd6', 'd12', 'd20'.
+ * Les dés personnalisés utilisent un identifiant unique du type 'custom-<timestamp>'.
+ */
+export type DiceType = string;
 
 /**
  * Configuration d'un dé : son identifiant, son nombre de faces et son libellé affiché.
