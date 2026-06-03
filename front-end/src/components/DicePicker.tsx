@@ -6,6 +6,11 @@ interface Props {
   onSelect: (type: DiceType) => void;
 }
 
+/**
+ * Affiche une grille de boutons permettant de sélectionner un dé.
+ * Le dé sélectionné est mis en évidence visuellement (bordure bleue + fond clair).
+ * L'attribut aria-pressed indique l'état de sélection pour l'accessibilité.
+ */
 export function DicePicker({ diceList, selected, onSelect }: Props) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
