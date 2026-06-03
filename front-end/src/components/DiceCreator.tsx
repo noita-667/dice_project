@@ -1,43 +1,45 @@
 import { useState } from 'react';
 import type { DiceConfig } from '../types/dice';
 
-/** Props du composant DiceCreator */
 interface Props {
   customDice: DiceConfig[];
-  onAdd: (die: DiceConfig) => void;
+  /**
+   * Callback de création.
+   * Retourne null si succès, ou un message d'erreur string si le serveur a refusé.
+   */
+  onAdd: (label: string, faces: number) => Promise<string | null>;
   onRemove: (type: string) => void;
 }
 
-/**
- * Formulaire permettant à l'utilisateur de créer un dé avec un nombre de faces personnalisé.
- *
- * Fonctionnalités :
- * - Saisie du nombre de faces (min 2, max 10 000)
- * - Nom optionnel (auto-généré "DN" si vide)
- * - Validation avec message d'erreur inline
- * - Soumission via bouton ou touche Entrée
- * - Affichage des dés créés avec bouton de suppression
- */
 export function DiceCreator({ customDice, onAdd, onRemove }: Props) {
-  const [faces, setFaces] = useState('');
-  const [label, setLabel] = useState('');
-  const [error, setError] = useState('');
+  const [faces, setFaces]       = useState('');
+  const [label, setLabel]       = useState('');
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
 
-  /** Valide les champs et ajoute le dé à la liste si valide */
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const n = parseInt(faces, 10);
     if (!n || n < 2 || n > 10_000) {
       setError('Le nombre de faces doit être entre 2 et 10 000');
       return;
     }
+
     setError('');
-    onAdd({
-      type: `custom-${Date.now()}`,
-      faces: n,
-      label: label.trim() || `D${n}`,
-    });
-    setFaces('');
-    setLabel('');
+    setLoading(true);
+
+    // onAdd retourne null si succès, ou un message d'erreur si échec
+    const err = await onAdd(label.trim() || `D${n}`, n);
+
+    setLoading(false);
+
+    if (err) {
+      // Affiche l'erreur renvoyée par le serveur/réseau
+      setError(err);
+    } else {
+      // Succès : vider les champs
+      setFaces('');
+      setLabel('');
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -50,7 +52,6 @@ export function DiceCreator({ customDice, onAdd, onRemove }: Props) {
         Créer un dé
       </div>
 
-      {/* Ligne de saisie : faces + nom + bouton ajouter */}
       <div style={{ display: 'flex', gap: 6 }}>
         <input
           type="number"
@@ -58,6 +59,7 @@ export function DiceCreator({ customDice, onAdd, onRemove }: Props) {
           max={10000}
           placeholder="Faces"
           value={faces}
+          disabled={loading}
           onChange={(e) => { setFaces(e.target.value); setError(''); }}
           onKeyDown={handleKeyDown}
           style={{
@@ -67,12 +69,14 @@ export function DiceCreator({ customDice, onAdd, onRemove }: Props) {
             border: error ? '1.5px solid #e55' : '1.5px solid #ccc',
             fontSize: 14,
             outline: 'none',
+            opacity: loading ? 0.6 : 1,
           }}
         />
         <input
           type="text"
           placeholder="Nom (ex: D100)"
           value={label}
+          disabled={loading}
           onChange={(e) => setLabel(e.target.value)}
           onKeyDown={handleKeyDown}
           style={{
@@ -82,30 +86,34 @@ export function DiceCreator({ customDice, onAdd, onRemove }: Props) {
             border: '1.5px solid #ccc',
             fontSize: 14,
             outline: 'none',
+            opacity: loading ? 0.6 : 1,
           }}
         />
         <button
           onClick={handleAdd}
+          disabled={loading}
           style={{
             padding: '0.5rem 0.75rem',
             borderRadius: 8,
             border: '1.5px solid #378ADD',
-            background: '#E6F1FB',
-            color: '#1a6ab5',
+            background: loading ? '#f0f0f0' : '#E6F1FB',
+            color: loading ? '#aaa' : '#1a6ab5',
             fontSize: 13,
-            cursor: 'pointer',
+            cursor: loading ? 'default' : 'pointer',
             fontWeight: 600,
             whiteSpace: 'nowrap',
           }}
         >
-          + Ajouter
+          {loading ? '…' : '+ Ajouter'}
         </button>
       </div>
 
+      {/* Message d'erreur (validation locale ou erreur serveur) */}
       {error && (
         <p style={{ fontSize: 12, color: '#e55', margin: '4px 0 0' }}>{error}</p>
       )}
 
+      {/* Chips des dés custom existants */}
       {customDice.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
           {customDice.map((die) => (
@@ -127,15 +135,7 @@ export function DiceCreator({ customDice, onAdd, onRemove }: Props) {
               <button
                 onClick={() => onRemove(die.type)}
                 aria-label={`Supprimer ${die.label}`}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#bbb',
-                  fontSize: 16,
-                  lineHeight: 1,
-                  padding: '0 0 0 2px',
-                }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 16, lineHeight: 1, padding: '0 0 0 2px' }}
               >
                 ×
               </button>
