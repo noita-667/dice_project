@@ -1,20 +1,21 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { getHistory, saveRoll, isValidType } from '../service/roll.service';
+import { getHistory, saveRoll, isValidType } from '../services/roll.service';
 
 const RollBody = z.object({
-  type: z.string(),
+  type:  z.string(),
   label: z.string(),
   value: z.number().int().min(1),
 });
 
 // GET /rolls
-export function getHistory_(req: Request, res: Response): void {
-  res.json(getHistory());
+export async function getRolls(_req: Request, res: Response): Promise<void> {
+  const rolls = await getHistory();
+  res.json(rolls);
 }
 
 // POST /rolls
-export function postRoll(req: Request, res: Response): void {
+export async function postRoll(req: Request, res: Response): Promise<void> {
   const parsed = RollBody.safeParse(req.body);
 
   if (!parsed.success) {
@@ -29,6 +30,6 @@ export function postRoll(req: Request, res: Response): void {
     return;
   }
 
-  const entry = saveRoll(type, label, value);
+  const entry = await saveRoll(type, label, value);
   res.status(201).json(entry);
 }
