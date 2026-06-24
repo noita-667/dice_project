@@ -2,9 +2,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { pool } from '../db/client';
 import { DiceType, RollEntry } from '../models/roll.model';
 
-/**
- * Récupère l'historique complet des lancers, du plus récent au plus ancien.
- */
 export async function getHistory(): Promise<RollEntry[]> {
   const { rows } = await pool.query<RollEntry>(
     'SELECT id, dice_type AS type, label, value, timestamp, player FROM rolls ORDER BY timestamp DESC'
@@ -12,6 +9,7 @@ export async function getHistory(): Promise<RollEntry[]> {
   return rows;
 }
 
+<<<<<<< HEAD
 /**
  * Enregistre un nouveau lancer en base de données.
  * Accepte tout type de dé (base ou personnalisé).
@@ -22,6 +20,10 @@ export async function getHistory(): Promise<RollEntry[]> {
  * @param player - Prénom du joueur
  */
 export async function saveRoll(type: DiceType, label: string, value: number, player: string): Promise<RollEntry> {
+=======
+
+export async function saveRoll(type: DiceType, label: string, value: number): Promise<RollEntry> {
+>>>>>>> 19c4d1f79ae4ddde0e4bd7ff905725307e455491
   const entry: RollEntry = {
     id: uuidv4(),
     type,
