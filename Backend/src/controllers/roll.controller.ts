@@ -4,9 +4,10 @@ import { getHistory, saveRoll } from '../services/roll.service';
 
 
 const RollBody = z.object({
-  type:  z.string().min(1).max(50),
-  label: z.string().min(1).max(50),
-  value: z.number().int().min(1),
+  type:   z.string().min(1).max(50),
+  label:  z.string().min(1).max(50),
+  value:  z.number().int().min(1),
+  player: z.string().min(1).max(50).optional().default('Anonyme'),
 });
 
 
