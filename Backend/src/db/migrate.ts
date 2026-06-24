@@ -1,19 +1,6 @@
 import { pool } from './client';
 
-/**
- * Crée ou met à jour les tables de la base de données.
- *
- * Stratégie :
- * - Détecte si l'ancien schéma (sans colonne `custom`) est présent.
- * - Si oui, supprime les anciennes tables et les recrée proprement (migration destructive,
- *   acceptable en développement).
- * - Si le nouveau schéma est déjà en place, ne fait rien hormis insérer les données initiales.
- */
 export async function migrate(): Promise<void> {
-
-  // ── Détection de l'ancien schéma ──────────────────────────────────────────
-  // On vérifie si la colonne `custom` existe dans la table dice.
-  // Si elle n'existe pas → ancien schéma → on recrée tout.
   const { rows: cols } = await pool.query<{ column_name: string }>(`
     SELECT column_name
     FROM information_schema.columns
@@ -24,12 +11,10 @@ export async function migrate(): Promise<void> {
 
   if (cols.length === 0) {
     console.log('[DB] Ancien schéma détecté — recréation des tables…');
-    // Supprimer dans le bon ordre (rolls référence dice via FK dans l'ancien schéma)
     await pool.query(`DROP TABLE IF EXISTS rolls`);
     await pool.query(`DROP TABLE IF EXISTS dice`);
   }
 
-  // ── TABLE dice ────────────────────────────────────────────────────────────
   await pool.query(`
     CREATE TABLE IF NOT EXISTS dice (
       type   VARCHAR(50) PRIMARY KEY,
@@ -39,7 +24,6 @@ export async function migrate(): Promise<void> {
     )
   `);
 
-  // Insérer les 3 dés de base (ignoré si déjà présents)
   await pool.query(`
     INSERT INTO dice (type, label, faces, custom) VALUES
       ('d6',  'D6',  6,  false),
@@ -48,9 +32,6 @@ export async function migrate(): Promise<void> {
     ON CONFLICT DO NOTHING
   `);
 
-  // ── TABLE rolls ───────────────────────────────────────────────────────────
-  // Pas de FK sur dice_type : les dés custom doivent pouvoir être supprimés
-  // sans invalider l'historique des lancers.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS rolls (
       id        UUID        PRIMARY KEY,
