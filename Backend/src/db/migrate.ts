@@ -15,7 +15,6 @@ export async function migrate(): Promise<void> {
     await pool.query(`DROP TABLE IF EXISTS dice`);
   }
 
-<<<<<<< HEAD
   // ── Ajout de la colonne player si absente ─────────────────────────────────
   const { rows: playerCol } = await pool.query<{ column_name: string }>(`
     SELECT column_name
@@ -33,8 +32,6 @@ export async function migrate(): Promise<void> {
   }
 
   // ── TABLE dice ────────────────────────────────────────────────────────────
-=======
->>>>>>> 19c4d1f79ae4ddde0e4bd7ff905725307e455491
   await pool.query(`
     CREATE TABLE IF NOT EXISTS dice (
       type   VARCHAR(50) PRIMARY KEY,
