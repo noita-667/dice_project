@@ -8,7 +8,7 @@ export interface DiceConfig {
   custom: boolean;
 }
 
-/** Représente un lancer enregistré en base de données */
+// Représente un lancer enregistré en base de données
 export interface RollEntry {
   id:        string;
   type:      DiceType;
