@@ -1,0 +1,16 @@
+.dice-result {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.dice-result__value {
+  font-size: 64px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.dice-result__label {
+  font-size: 13px;
+  color: #888;
+  margin-top: 6px;
+}

@@ -1,0 +1,96 @@
+.dice-creator {
+  margin-bottom: 1.5rem;
+}
+
+.dice-creator__row {
+  display: flex;
+  gap: 6px;
+}
+
+.dice-creator__input-faces {
+  width: 72px;
+  padding: 0.5rem 0.4rem;
+  border-radius: 8px;
+  border: 1.5px solid #ccc;
+  font-size: 14px;
+  outline: none;
+}
+
+.dice-creator__input-faces.error {
+  border-color: #e55;
+}
+
+.dice-creator__input-label {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1.5px solid #ccc;
+  font-size: 14px;
+  outline: none;
+}
+
+.dice-creator__input-faces:disabled,
+.dice-creator__input-label:disabled {
+  opacity: 0.6;
+}
+
+.dice-creator__btn-add {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1.5px solid #378ADD;
+  background: #E6F1FB;
+  color: #1a6ab5;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dice-creator__btn-add:disabled {
+  background: #f0f0f0;
+  color: #aaa;
+  cursor: default;
+}
+
+.dice-creator__error {
+  font-size: 12px;
+  color: #e55;
+  margin: 4px 0 0;
+}
+
+.dice-creator__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.dice-creator__chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 12px;
+  border-radius: 20px;
+  border: 1.5px solid #ddd;
+  font-size: 13px;
+  background: #fafafa;
+}
+
+.dice-creator__chip-name {
+  font-weight: 500;
+}
+
+.dice-creator__chip-faces {
+  color: #bbb;
+  font-size: 11px;
+}
+
+.dice-creator__chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #bbb;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 0 0 2px;
+}

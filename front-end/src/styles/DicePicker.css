@@ -1,0 +1,20 @@
+.dice-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.dice-btn {
+  padding: 1rem 0.5rem;
+  border-radius: 12px;
+  border: 1.5px solid #ccc;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.dice-btn[aria-pressed="true"] {
+  border: 2px solid #378ADD;
+  background: #E6F1FB;
+}

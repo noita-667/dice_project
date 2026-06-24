@@ -5,5 +5,6 @@ export interface RollEntry {
   type:      DiceType;
   label:     string;
   value:     number;
-  timestamp: number;
+  timestamp: number; // Date.now() en ms
+  player:    string;
 }

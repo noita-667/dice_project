@@ -1,0 +1,26 @@
+.animated-die {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 2px solid #ccc;
+  background: #fafafa;
+  font-size: 18px;
+  font-weight: 700;
+  transition: border-color 0.2s, background 0.2s;
+  user-select: none;
+  flex-shrink: 0;
+  cursor: default;
+}
+
+.animated-die--active {
+  border-color: #378ADD;
+  background: #f0f7ff;
+}
+
+.animated-die--rolling {
+  border-color: #378ADD;
+  background: #ddeeff;
+}

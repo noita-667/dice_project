@@ -1,260 +1,102 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { DiceConfig, DiceType, RollEntry } from './types/dice';
-import { DicePicker } from './components/DicePicker';
-import { DiceResult } from './components/DiceResult';
+import { fetchDice, fetchHistory, addDie, removeDie, saveRoll } from './api';
+import { DicePicker }  from './components/DicePicker';
+import { DiceResult }  from './components/DiceResult';
 import { RollHistory } from './components/RollHistory';
 import { DiceCreator } from './components/DiceCreator';
 import { AnimatedDie } from './components/AnimatedDie';
+import './styles/animations.css';
+import './styles/App.css';
 
-/** URL de base de l'API back-end */
-const API_URL = 'http://localhost:3000';
+// Durée de l'animation avant d'afficher le résultat
+const ROLL_DURATION = 800;
 
-/** Durée de l'animation de lancer en ms avant d'afficher le résultat final */
-const ROLL_ANIMATION_DURATION = 800;
-
-/**
- * Dés de base affichés en fallback si l'API est indisponible.
- * Correspond aux données seedées par la migration côté back-end.
- */
-const DEFAULT_DICE: DiceConfig[] = [
-  { type: 'd6',  faces: 6,  label: 'D6',  custom: false },
-  { type: 'd12', faces: 12, label: 'D12', custom: false },
-  { type: 'd20', faces: 20, label: 'D20', custom: false },
-];
-
-/**
- * Styles CSS globaux injectés dans <head> pour l'animation du dé.
- * Définis ici pour rester colocalisés avec la logique de lancer.
- */
-const ANIMATION_STYLES = `
-  @keyframes diceShake {
-    0%   { transform: rotate(0deg)   scale(1);    }
-    20%  { transform: rotate(-18deg) scale(1.15); }
-    40%  { transform: rotate(18deg)  scale(1.15); }
-    60%  { transform: rotate(-12deg) scale(1.08); }
-    80%  { transform: rotate(12deg)  scale(1.08); }
-    100% { transform: rotate(0deg)   scale(1);    }
-  }
-  .die-rolling {
-    animation: diceShake 0.25s ease-in-out infinite;
-  }
-`;
-
-/**
- * Composant racine de l'application.
- *
- * Gère :
- * - la liste complète des dés (chargée depuis GET /dice, avec fallback hardcodé)
- * - la création de dés custom (POST /dice) et leur suppression (DELETE /dice/:type)
- * - la sélection du dé actif
- * - l'animation de lancer (isRolling)
- * - l'enregistrement du résultat via POST /rolls
- * - l'affichage de l'historique via GET /rolls
- */
 export default function App() {
-  /** Dé actuellement sélectionné (null = aucun) */
-  const [selected, setSelected] = useState<DiceType | null>(null);
-  /**
-   * Liste complète des dés (base + custom).
-   * Initialisée avec DEFAULT_DICE pour que les dés de base s'affichent
-   * immédiatement, même avant la réponse de l'API.
-   */
-  const [allDice, setAllDice] = useState<DiceConfig[]>(DEFAULT_DICE);
-  /** Résultat du dernier lancer terminé */
-  const [lastRoll, setLastRoll] = useState<{ value: number; label: string } | null>(null);
-  /** Historique des lancers récupéré depuis l'API */
-  const [history, setHistory] = useState<RollEntry[]>([]);
-  /** true pendant la durée de l'animation de lancer */
-  const [isRolling, setIsRolling] = useState(false);
-  /** Nombre de faces du dé en cours de lancer (pour le cycling de l'AnimatedDie) */
-  const [rollingFaces, setRollingFaces] = useState(6);
-  /** Prénom du joueur actif */
-  const [player, setPlayer] = useState('');
+  const [selected,     setSelected]     = useState<DiceType | null>(null);
+  const [allDice,      setAllDice]      = useState<DiceConfig[]>([]);
+  const [lastRoll,     setLastRoll]     = useState<{ value: number; label: string } | null>(null);
+  const [history,      setHistory]      = useState<RollEntry[]>([]);
+  const [isRolling,    setIsRolling]    = useState(false);
+  const [rollingFaces, setRollingFaces] = useState(6); // nb de faces du dé en cours d'animation
+  const [player,       setPlayer]       = useState('');
 
-  /** Dés créés par l'utilisateur (filtrés depuis allDice) */
+  // Seuls les dés custom sont passés à DiceCreator pour afficher les chips
   const customDice = allDice.filter((d) => d.custom);
 
-  /**
-   * Charge la liste des dés depuis GET /dice.
-   * En cas d'erreur (back-end indisponible), conserve le fallback DEFAULT_DICE.
-   */
-  const fetchDice = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_URL}/dice`);
-      if (!res.ok) throw new Error(`GET /dice → ${res.status}`);
-      const data: DiceConfig[] = await res.json();
-      setAllDice(data);
-    } catch (err) {
-      console.warn('[App] Impossible de charger les dés depuis l\'API, fallback sur la liste locale.', err);
-      // On conserve l'état actuel (DEFAULT_DICE au démarrage)
-    }
-  }, []);
+  const reloadDice    = useCallback(() => fetchDice().then(setAllDice), []);
+  const reloadHistory = useCallback(() => fetchHistory().then(setHistory), []);
 
-  /**
-   * Récupère l'historique des lancers depuis GET /rolls.
-   * En cas d'erreur, laisse l'historique vide (aucun crash).
-   */
-  const fetchHistory = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_URL}/rolls`);
-      if (!res.ok) throw new Error(`GET /rolls → ${res.status}`);
-      const data: RollEntry[] = await res.json();
-      setHistory(data);
-    } catch (err) {
-      console.warn('[App] Impossible de charger l\'historique.', err);
-    }
-  }, []);
-
-  // Chargement initial au montage
+  // Chargement initial des dés et de l'historique
   useEffect(() => {
-    fetchDice();
-    fetchHistory();
-  }, [fetchDice, fetchHistory]);
+    reloadDice();
+    reloadHistory();
+  }, [reloadDice, reloadHistory]);
 
-  /**
-   * Crée un dé personnalisé via POST /dice, puis rafraîchit la liste.
-   * Le type unique est généré côté serveur.
-   *
-   * @returns null si succès, message d'erreur string si échec
-   */
-  const handleAddDie = useCallback(async (label: string, faces: number): Promise<string | null> => {
-    try {
-      const res = await fetch(`${API_URL}/dice`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ label, faces }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        console.error('[App] Échec création dé :', res.status, body);
-        return `Erreur serveur (${res.status})`;
-      }
-      await fetchDice();
-      return null;
-    } catch {
-      return 'Serveur inaccessible — vérifiez que le back-end tourne.';
-    }
-  }, [fetchDice]);
+  const handleAddDie = useCallback(async (label: string, faces: number) => {
+    const err = await addDie(label, faces);
+    if (!err) reloadDice(); // rafraîchit la liste uniquement si succès
+    return err;
+  }, [reloadDice]);
 
-  /**
-   * Supprime un dé custom via DELETE /dice/:type, puis rafraîchit la liste.
-   * Réinitialise la sélection si le dé supprimé était sélectionné.
-   */
   const handleRemoveDie = useCallback(async (type: string) => {
-    try {
-      await fetch(`${API_URL}/dice/${type}`, { method: 'DELETE' });
-    } catch (err) {
-      console.error('[App] Erreur lors de la suppression du dé.', err);
-    }
+    await removeDie(type);
+    // Désélectionne le dé si c'est celui qu'on vient de supprimer
     setSelected((prev) => (prev === type ? null : prev));
-    fetchDice();
-  }, [fetchDice]);
+    reloadDice();
+  }, [reloadDice]);
 
-  /**
-   * Effectue un lancer de dé :
-   * 1. Déclenche l'animation (isRolling = true)
-   * 2. Génère la valeur aléatoire immédiatement
-   * 3. Après ROLL_ANIMATION_DURATION ms, arrête l'animation, affiche le résultat
-   *    et l'enregistre via POST /rolls
-   */
   const handleRoll = useCallback(() => {
     if (!selected || isRolling) return;
     const die = allDice.find((d) => d.type === selected);
     if (!die) return;
 
-    // Tirage aléatoire uniforme entre 1 et die.faces (inclus)
+    // Tirage immédiat, résultat affiché après l'animation
     const value = Math.floor(Math.random() * die.faces) + 1;
-
     setRollingFaces(die.faces);
     setIsRolling(true);
 
-    // Après l'animation : afficher le résultat et sauvegarder
-    setTimeout(() => {
+    // Après l'animation : affiche le résultat et sauvegarde
+    setTimeout(async () => {
       setIsRolling(false);
       setLastRoll({ value, label: `${die.label} · ${die.faces} faces` });
-
-      // On rafraîchit l'historique dans tous les cas (succès ou échec du POST)
-      fetch(`${API_URL}/rolls`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: die.type, label: die.label, value, player: player.trim() || 'Anonyme' }),
-      })
-        .catch((err) => console.warn('[App] Impossible de sauvegarder le lancer.', err))
-        .finally(() => fetchHistory());
-    }, ROLL_ANIMATION_DURATION);
-  }, [selected, isRolling, allDice, fetchHistory]);
+      await saveRoll(die.type, die.label, value, player.trim() || 'Anonyme');
+      reloadHistory();
+    }, ROLL_DURATION);
+  }, [selected, isRolling, allDice, player, reloadHistory]);
 
   return (
-    <>
-      {/* Keyframes CSS pour l'animation de secousse du dé */}
-      <style>{ANIMATION_STYLES}</style>
+    <main className="app-main">
+      <h1 className="app-title">Lancer de dés</h1>
 
-      <main style={{ maxWidth: 400, margin: '2rem auto', padding: '0 1rem', fontFamily: 'sans-serif' }}>
-        <h1 style={{ fontSize: 16, fontWeight: 500, marginBottom: '1.5rem' }}>Lancer de dés</h1>
+      <div className="player-section">
+        <div className="field-label">Joueur</div>
+        <input
+          type="text"
+          placeholder="Ton prénom"
+          value={player}
+          onChange={(e) => setPlayer(e.target.value)}
+          maxLength={50}
+          className="player-input"
+        />
+      </div>
 
-        {/* Champ de saisie du prénom du joueur */}
-        <div style={{ marginBottom: '1.25rem' }}>
-          <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#888', marginBottom: 6 }}>
-            Joueur
-          </div>
-          <input
-            type="text"
-            placeholder="Ton prénom"
-            value={player}
-            onChange={(e) => setPlayer(e.target.value)}
-            maxLength={50}
-            style={{
-              width: '100%',
-              boxSizing: 'border-box',
-              padding: '0.5rem 0.75rem',
-              borderRadius: 8,
-              border: '1.5px solid #ccc',
-              fontSize: 14,
-              outline: 'none',
-            }}
-          />
-        </div>
+      <DicePicker diceList={allDice} selected={selected} onSelect={setSelected} />
 
-        {/* Sélecteur de dé : affiche tous les dés (base + custom) */}
-        <DicePicker diceList={allDice} selected={selected} onSelect={setSelected} />
+      <div className="dice-creator-wrapper">
+        <DiceCreator customDice={customDice} onAdd={handleAddDie} onRemove={handleRemoveDie} />
+      </div>
 
-        {/* Formulaire de création de dé personnalisé */}
-        <div style={{ margin: '1.25rem 0 0' }}>
-          <DiceCreator customDice={customDice} onAdd={handleAddDie} onRemove={handleRemoveDie} />
-        </div>
+      <DiceResult value={lastRoll?.value ?? null} label={lastRoll?.label ?? null} />
 
-        {/* Grand affichage du dernier résultat (mis à jour après animation) */}
-        <DiceResult value={lastRoll?.value ?? null} label={lastRoll?.label ?? null} />
+      <div className="roll-row">
+        <AnimatedDie faces={rollingFaces} isRolling={isRolling} value={lastRoll?.value ?? null} />
+        <button className="roll-btn" onClick={handleRoll} disabled={!selected || isRolling}>
+          {isRolling ? 'Lancer en cours…' : 'Lancer'}
+        </button>
+      </div>
 
-        {/* Ligne d'action : petit dé animé + bouton lancer */}
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: '1.5rem' }}>
-          {/* Petit dé qui s'anime pendant le lancer */}
-          <AnimatedDie
-            faces={rollingFaces}
-            isRolling={isRolling}
-            value={lastRoll?.value ?? null}
-          />
-          {/* Bouton désactivé pendant l'animation ou sans sélection */}
-          <button
-            onClick={handleRoll}
-            disabled={!selected || isRolling}
-            style={{
-              flex: 1,
-              padding: '0.75rem',
-              fontSize: 15,
-              cursor: selected && !isRolling ? 'pointer' : 'default',
-              borderRadius: 8,
-              border: '1.5px solid #ccc',
-              background: 'transparent',
-            }}
-          >
-            {isRolling ? 'Lancer en cours…' : 'Lancer'}
-          </button>
-        </div>
-
-        {/* Historique des lancers (allDice passé pour calculer les couleurs par nb de faces) */}
-        <RollHistory history={history} allDice={allDice} />
-      </main>
-    </>
+      <RollHistory history={history} allDice={allDice} />
+    </main>
   );
 }
