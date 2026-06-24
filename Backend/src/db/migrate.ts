@@ -29,6 +29,22 @@ export async function migrate(): Promise<void> {
     await pool.query(`DROP TABLE IF EXISTS dice`);
   }
 
+  // ── Ajout de la colonne player si absente ─────────────────────────────────
+  const { rows: playerCol } = await pool.query<{ column_name: string }>(`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'rolls'
+      AND column_name  = 'player'
+  `);
+
+  if (playerCol.length === 0) {
+    // La table existe déjà mais sans la colonne player → on l'ajoute
+    await pool.query(`
+      ALTER TABLE rolls ADD COLUMN IF NOT EXISTS player VARCHAR(50) NOT NULL DEFAULT 'Anonyme'
+    `).catch(() => null); // ignore si la table n'existe pas encore (sera créée après)
+  }
+
   // ── TABLE dice ────────────────────────────────────────────────────────────
   await pool.query(`
     CREATE TABLE IF NOT EXISTS dice (
@@ -57,7 +73,8 @@ export async function migrate(): Promise<void> {
       dice_type VARCHAR(50) NOT NULL,
       label     VARCHAR(50) NOT NULL,
       value     INTEGER     NOT NULL CHECK (value >= 1),
-      timestamp BIGINT      NOT NULL
+      timestamp BIGINT      NOT NULL,
+      player    VARCHAR(50) NOT NULL DEFAULT 'Anonyme'
     )
   `);
 

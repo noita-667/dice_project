@@ -1,0 +1,11 @@
+@keyframes diceShake {
+  0%,100% { transform: rotate(0deg)   scale(1);    }
+  20%      { transform: rotate(-18deg) scale(1.15); }
+  40%      { transform: rotate(18deg)  scale(1.15); }
+  60%      { transform: rotate(-12deg) scale(1.08); }
+  80%      { transform: rotate(12deg)  scale(1.08); }
+}
+
+.die-rolling {
+  animation: diceShake 0.25s ease-in-out infinite;
+}

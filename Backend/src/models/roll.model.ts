@@ -12,4 +12,5 @@ export interface RollEntry {
   label:     string;
   value:     number;
   timestamp: number; // Date.now() en ms
+  player:    string;
 }

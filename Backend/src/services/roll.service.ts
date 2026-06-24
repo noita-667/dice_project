@@ -7,7 +7,7 @@ import { DiceType, RollEntry } from '../models/roll.model';
  */
 export async function getHistory(): Promise<RollEntry[]> {
   const { rows } = await pool.query<RollEntry>(
-    'SELECT id, dice_type AS type, label, value, timestamp FROM rolls ORDER BY timestamp DESC'
+    'SELECT id, dice_type AS type, label, value, timestamp, player FROM rolls ORDER BY timestamp DESC'
   );
   return rows;
 }
@@ -16,22 +16,24 @@ export async function getHistory(): Promise<RollEntry[]> {
  * Enregistre un nouveau lancer en base de données.
  * Accepte tout type de dé (base ou personnalisé).
  *
- * @param type  - Identifiant du dé (ex: 'd20', 'custom-abc123')
- * @param label - Libellé affiché (ex: 'D20', 'Mon dé')
- * @param value - Valeur obtenue (>= 1)
+ * @param type   - Identifiant du dé (ex: 'd20', 'custom-abc123')
+ * @param label  - Libellé affiché (ex: 'D20', 'Mon dé')
+ * @param value  - Valeur obtenue (>= 1)
+ * @param player - Prénom du joueur
  */
-export async function saveRoll(type: DiceType, label: string, value: number): Promise<RollEntry> {
+export async function saveRoll(type: DiceType, label: string, value: number, player: string): Promise<RollEntry> {
   const entry: RollEntry = {
     id: uuidv4(),
     type,
     label,
     value,
     timestamp: Date.now(),
+    player,
   };
 
   await pool.query(
-    'INSERT INTO rolls (id, dice_type, label, value, timestamp) VALUES ($1, $2, $3, $4, $5)',
-    [entry.id, entry.type, entry.label, entry.value, entry.timestamp]
+    'INSERT INTO rolls (id, dice_type, label, value, timestamp, player) VALUES ($1, $2, $3, $4, $5, $6)',
+    [entry.id, entry.type, entry.label, entry.value, entry.timestamp, entry.player]
   );
 
   return entry;

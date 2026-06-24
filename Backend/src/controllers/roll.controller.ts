@@ -28,7 +28,7 @@ export async function postRoll(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const { type, label, value } = parsed.data;
-  const entry = await saveRoll(type, label, value);
+  const { type, label, value, player } = parsed.data;
+  const entry = await saveRoll(type, label, value, player);
   res.status(201).json(entry);
 }
