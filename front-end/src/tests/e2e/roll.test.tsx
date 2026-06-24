@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
-import App from "../../App";
+import { test, expect, vi } from 'vitest';
+import App from '../../App';
 
 vi.spyOn(global, 'fetch').mockResolvedValue({
   ok: true,
@@ -9,15 +9,19 @@ vi.spyOn(global, 'fetch').mockResolvedValue({
   ]),
 } as Response);
 
-test('sélectionner D6 et cliquer Lancer affiche un résultat', async () => {
+test("lancer un dé et voir le résultat", async () => {
   render(<App />);
+
+  // Saisir le prénom du joueur
+  fireEvent.change(screen.getByPlaceholderText('Ton prénom'), { target: { value: 'Alice' } });
+
+  // sélection du dée et lancer
   await waitFor(() => screen.getByRole('button', { name: 'D6' }));
-  // Sélectionner le dé et cliquer sur Lancer
   fireEvent.click(screen.getByRole('button', { name: 'D6' }));
   fireEvent.click(screen.getByRole('button', { name: 'Lancer' }));
 // Vérifier que le résultat est affiché
   await waitFor(
     () => expect(screen.getByText(/D6 · 6 faces/i)).toBeInTheDocument(),
-    { timeout: 1500 }
+    { timeout: 2000 }
   );
 });

@@ -2,11 +2,10 @@ import type { DiceConfig, RollEntry } from '../types/dice';
 
 interface Props {
   history: RollEntry[];
-  /** Liste complète des dés, utilisée pour retrouver le nb de faces par type */
   allDice: DiceConfig[];
 }
 
-/** Formate un timestamp Unix (ms) en heure HH:MM:SS */
+/** Formate un timestamp */
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString('fr-FR', {
     hour: '2-digit',
@@ -15,12 +14,7 @@ function formatTime(ts: number): string {
   });
 }
 
-/**
- * Retourne une couleur de fond selon le ratio valeur/max :
- * - ≥ 85% → vert clair (bon résultat)
- * - ≤ 20% → rouge clair (mauvais résultat)
- * - sinon → transparent
- */
+
 function getValueColor(value: number, faces: number): string {
   if (faces <= 0) return 'transparent';
   const ratio = value / faces;
@@ -29,7 +23,7 @@ function getValueColor(value: number, faces: number): string {
   return 'transparent';
 }
 
-/** Calcule quelques statistiques sur l'historique complet */
+// Calcule quelques statistiques sur l'historique complet
 function computeStats(history: RollEntry[]) {
   if (history.length === 0) return null;
   const values    = history.map((e) => e.value);
@@ -49,7 +43,7 @@ function computeStats(history: RollEntry[]) {
 export function RollHistory({ history, allDice }: Props) {
   const stats = computeStats(history);
 
-  // Index des dés par type pour un lookup O(1)
+  // Index des dés par type 
   const diceByType = Object.fromEntries(allDice.map((d) => [d.type, d]));
 
   return (
